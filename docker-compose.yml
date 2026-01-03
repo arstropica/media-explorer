@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  media-explorer:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - PORT=3000
+      - MEDIA_ROOT=/media
+    volumes:
+      # Mount your media directory here
+      - ${MEDIA_PATH:-~/}:/media:ro
+    restart: unless-stopped
