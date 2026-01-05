@@ -1,10 +1,42 @@
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { fetchDirectory } from "@/api/client";
 import type { DirectoryResponse, FileItem } from "@/api/types";
 import { useExplorerStore } from "@/store/explorerStore";
+import { useSettingsStore, SortField, SortOrder } from "@/store/settingsStore";
+
+function sortItems(items: FileItem[], field: SortField, order: SortOrder): FileItem[] {
+  // Directories always come first
+  const dirs = items.filter((i) => i.type === "directory");
+  const files = items.filter((i) => i.type !== "directory");
+
+  const compare = (a: FileItem, b: FileItem): number => {
+    let result = 0;
+    switch (field) {
+      case "name":
+        result = a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+        break;
+      case "size":
+        result = (a.size ?? 0) - (b.size ?? 0);
+        break;
+      case "date":
+        result = new Date(a.mtime).getTime() - new Date(b.mtime).getTime();
+        break;
+      case "type":
+        result = a.type.localeCompare(b.type);
+        if (result === 0) {
+          result = a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+        }
+        break;
+    }
+    return order === "asc" ? result : -result;
+  };
+
+  return [...dirs.sort(compare), ...files.sort(compare)];
+}
 
 export function useFiles() {
   const { currentPath, setCurrentPath, setLoading, setError } = useExplorerStore();
+  const { sortField, sortOrder } = useSettingsStore();
   const [data, setData] = useState<DirectoryResponse | null>(null);
   const isInitialLoad = useRef(true);
 
@@ -34,8 +66,13 @@ export function useFiles() {
     loadDirectory();
   }, [loadDirectory]);
 
+  const sortedItems = useMemo(
+    () => sortItems(data?.items ?? [], sortField, sortOrder),
+    [data?.items, sortField, sortOrder]
+  );
+
   return {
-    items: data?.items ?? [],
+    items: sortedItems,
     parentPath: data?.parent ?? null,
     path: data?.path ?? currentPath,
     reload: loadDirectory,
