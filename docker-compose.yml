@@ -13,7 +13,7 @@ services:
       - MEDIA_ROOT=/media
     volumes:
       # Mount your media directory here
-      - ${MEDIA_PATH:-~/}:/media:ro
+      - ${MEDIA_HOST_PATH:-~/}:/media:ro
     networks:
       - vision_network
     restart: unless-stopped

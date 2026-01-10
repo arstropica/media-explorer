@@ -47,6 +47,7 @@ media-explorer/
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `MEDIA_ROOT` | Root directory for browsing (cannot navigate above) | `/media` |
+| `MEDIA_HOST_PATH` | Host path to mount as media directory (Docker only) | `~/` |
 | `PORT` | Server port | `3000` |
 
 ## Development
@@ -70,7 +71,7 @@ The app runs at `http://localhost:5173` with API proxy to the backend.
 docker-compose up --build
 
 # Or with custom media directory
-MEDIA_ROOT=/path/to/media docker-compose up --build
+MEDIA_HOST_PATH=/path/to/media docker-compose up --build
 ```
 
 ### Manual
