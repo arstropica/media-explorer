@@ -3,6 +3,7 @@ version: "3.8"
 services:
   media-explorer:
     build: .
+    container_name: media-explorer
     ports:
       - "${PORT:-3000}:3000"
     environment:
@@ -11,4 +12,11 @@ services:
     volumes:
       # Mount your media directory here
       - ${MEDIA_PATH:-~/}:/media:ro
+    networks:
+      - vision_network
     restart: unless-stopped
+
+networks:
+  vision_network:
+    name: ${DOCKER_NETWORK:-vision_network}
+    external: true
