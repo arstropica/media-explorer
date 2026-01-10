@@ -4,6 +4,23 @@ import type { DirectoryResponse, FileItem } from "@/api/types";
 import { useExplorerStore } from "@/store/explorerStore";
 import { useSettingsStore, SortField, SortOrder } from "@/store/settingsStore";
 
+function filterItems(items: FileItem[], filterText: string): FileItem[] {
+  if (!filterText) return items;
+
+  let matcher: (name: string) => boolean;
+
+  try {
+    const regex = new RegExp(filterText, "i");
+    matcher = (name) => regex.test(name);
+  } catch {
+    // Invalid regex, fall back to simple includes
+    const lowerFilter = filterText.toLowerCase();
+    matcher = (name) => name.toLowerCase().includes(lowerFilter);
+  }
+
+  return items.filter((item) => matcher(item.name));
+}
+
 function sortItems(items: FileItem[], field: SortField, order: SortOrder): FileItem[] {
   // Directories always come first
   const dirs = items.filter((i) => i.type === "directory");
@@ -35,7 +52,7 @@ function sortItems(items: FileItem[], field: SortField, order: SortOrder): FileI
 }
 
 export function useFiles() {
-  const { currentPath, setCurrentPath, setLoading, setError } = useExplorerStore();
+  const { currentPath, setCurrentPath, setLoading, setError, filterText } = useExplorerStore();
   const { sortField, sortOrder } = useSettingsStore();
   const [data, setData] = useState<DirectoryResponse | null>(null);
   const isInitialLoad = useRef(true);
@@ -66,13 +83,13 @@ export function useFiles() {
     loadDirectory();
   }, [loadDirectory]);
 
-  const sortedItems = useMemo(
-    () => sortItems(data?.items ?? [], sortField, sortOrder),
-    [data?.items, sortField, sortOrder]
-  );
+  const filteredAndSortedItems = useMemo(() => {
+    const filtered = filterItems(data?.items ?? [], filterText);
+    return sortItems(filtered, sortField, sortOrder);
+  }, [data?.items, filterText, sortField, sortOrder]);
 
   return {
-    items: sortedItems,
+    items: filteredAndSortedItems,
     parentPath: data?.parent ?? null,
     path: data?.path ?? currentPath,
     reload: loadDirectory,

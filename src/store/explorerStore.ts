@@ -6,10 +6,12 @@ interface ExplorerState {
   selectedFile: FileItem | null;
   isLoading: boolean;
   error: string | null;
+  filterText: string;
   setCurrentPath: (path: string) => void;
   selectFile: (file: FileItem | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  setFilterText: (filter: string) => void;
 }
 
 function getInitialPath(): string {
@@ -26,8 +28,9 @@ export const useExplorerStore = create<ExplorerState>((set) => ({
   selectedFile: null,
   isLoading: false,
   error: null,
+  filterText: "",
   setCurrentPath: (currentPath) => {
-    set({ currentPath, selectedFile: null });
+    set({ currentPath, selectedFile: null, filterText: "" });
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       url.searchParams.set("path", currentPath);
@@ -37,4 +40,5 @@ export const useExplorerStore = create<ExplorerState>((set) => ({
   selectFile: (selectedFile) => set({ selectedFile }),
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
+  setFilterText: (filterText) => set({ filterText }),
 }));

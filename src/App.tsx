@@ -1,6 +1,7 @@
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { ControlBar } from "@/components/ControlBar";
 import { NavigationBar } from "@/components/NavigationBar";
+import { FilterBar } from "@/components/FilterBar";
 import { FileList } from "@/components/FileList";
 import { ThumbnailGrid } from "@/components/ThumbnailGrid";
 import { PreviewSidebar } from "@/components/PreviewSidebar";
@@ -26,6 +27,9 @@ export default function App() {
 
       {/* Navigation breadcrumbs */}
       <NavigationBar parentPath={parentPath} />
+
+      {/* File filter */}
+      <FilterBar />
 
       {/* Main content area */}
       <div className="flex-1 flex min-h-0">
