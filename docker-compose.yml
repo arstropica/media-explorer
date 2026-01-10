@@ -4,6 +4,8 @@ services:
   media-explorer:
     build: .
     container_name: media-explorer
+    labels:
+      net.unraid.docker.webui: "http://[IP]:[PORT:${PORT:-3000}]"
     ports:
       - "${PORT:-3000}:3000"
     environment:
