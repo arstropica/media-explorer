@@ -11,6 +11,7 @@ services:
     environment:
       - PORT=3000
       - MEDIA_ROOT=/media
+      - MAX_RECURSION_DEPTH=${MAX_RECURSION_DEPTH:-5}
     volumes:
       # Mount your media directory here
       - ${MEDIA_HOST_PATH:-~/}:/media:ro
