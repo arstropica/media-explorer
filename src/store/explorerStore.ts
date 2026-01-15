@@ -7,11 +7,13 @@ interface ExplorerState {
   isLoading: boolean;
   error: string | null;
   filterText: string;
+  recursiveSearch: boolean;
   setCurrentPath: (path: string) => void;
   selectFile: (file: FileItem | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setFilterText: (filter: string) => void;
+  setRecursiveSearch: (recursive: boolean) => void;
 }
 
 function getInitialPath(): string {
@@ -29,6 +31,7 @@ export const useExplorerStore = create<ExplorerState>((set) => ({
   isLoading: false,
   error: null,
   filterText: "",
+  recursiveSearch: false,
   setCurrentPath: (currentPath) => {
     set({ currentPath, selectedFile: null, filterText: "" });
     if (typeof window !== "undefined") {
@@ -41,4 +44,5 @@ export const useExplorerStore = create<ExplorerState>((set) => ({
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
   setFilterText: (filterText) => set({ filterText }),
+  setRecursiveSearch: (recursiveSearch) => set({ recursiveSearch }),
 }));

@@ -28,10 +28,76 @@ function isPathWithinRoot(requestedPath: string, rootPath: string): boolean {
   return resolved.startsWith(root);
 }
 
+interface FileItemResult {
+  name: string;
+  path: string;
+  type: MediaType;
+  size: number;
+  mtime: string;
+}
+
+function readDirectoryRecursive(
+  dirPath: string,
+  basePath: string,
+  maxDepth: number,
+  currentDepth: number = 0
+): FileItemResult[] {
+  if (currentDepth > maxDepth) {
+    return [];
+  }
+
+  const items: FileItemResult[] = [];
+
+  try {
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+
+    for (const entry of entries) {
+      if (entry.name.startsWith(".")) continue; // Skip hidden files
+
+      const itemPath = path.join(dirPath, entry.name);
+      const isDir = entry.isDirectory();
+
+      let size = 0;
+      let mtime = new Date().toISOString();
+
+      try {
+        const itemStats = fs.statSync(itemPath);
+        size = isDir ? 0 : itemStats.size;
+        mtime = itemStats.mtime.toISOString();
+      } catch {
+        // Ignore stat errors for individual files
+      }
+
+      // For recursive results, use relative path from base for display
+      const relativePath = path.relative(basePath, itemPath);
+
+      items.push({
+        name: relativePath,
+        path: itemPath,
+        type: getMediaType(entry.name, isDir),
+        size,
+        mtime,
+      });
+
+      // Recurse into subdirectories
+      if (isDir) {
+        items.push(...readDirectoryRecursive(itemPath, basePath, maxDepth, currentDepth + 1));
+      }
+    }
+  } catch (err) {
+    // Ignore permission errors for individual directories
+    console.error(`[Files] Error reading directory ${dirPath}:`, err);
+  }
+
+  return items;
+}
+
 router.get("/", async (req: Request, res: Response) => {
   try {
     const mediaRoot: string = req.app.locals.mediaRoot;
+    const maxRecursionDepth: number = req.app.locals.maxRecursionDepth ?? 5;
     const requestedPath = (req.query.path as string) || mediaRoot;
+    const recursive = req.query.recursive === "true";
 
     // Resolve the path
     let resolvedPath = path.resolve(requestedPath);
@@ -56,41 +122,49 @@ router.get("/", async (req: Request, res: Response) => {
       });
     }
 
-    // Read directory contents
-    const entries = fs.readdirSync(resolvedPath, { withFileTypes: true });
+    let items: FileItemResult[];
 
-    // Build items list
-    const items = entries
-      .filter((entry) => !entry.name.startsWith(".")) // Skip hidden files
-      .map((entry) => {
-        const itemPath = path.join(resolvedPath, entry.name);
-        const isDir = entry.isDirectory();
+    if (recursive) {
+      // Recursive mode: get all files from subdirectories (excluding directories themselves)
+      items = readDirectoryRecursive(resolvedPath, resolvedPath, maxRecursionDepth)
+        .filter((item) => item.type !== "directory");
+    } else {
+      // Non-recursive mode: original behavior
+      const entries = fs.readdirSync(resolvedPath, { withFileTypes: true });
 
-        let size = 0;
-        let mtime = new Date().toISOString();
+      items = entries
+        .filter((entry) => !entry.name.startsWith(".")) // Skip hidden files
+        .map((entry) => {
+          const itemPath = path.join(resolvedPath, entry.name);
+          const isDir = entry.isDirectory();
 
-        try {
-          const itemStats = fs.statSync(itemPath);
-          size = isDir ? 0 : itemStats.size;
-          mtime = itemStats.mtime.toISOString();
-        } catch {
-          // Ignore stat errors for individual files
-        }
+          let size = 0;
+          let mtime = new Date().toISOString();
 
-        return {
-          name: entry.name,
-          path: itemPath,
-          type: getMediaType(entry.name, isDir),
-          size,
-          mtime,
-        };
-      })
-      .sort((a, b) => {
-        // Directories first, then alphabetical
-        if (a.type === "directory" && b.type !== "directory") return -1;
-        if (a.type !== "directory" && b.type === "directory") return 1;
-        return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
-      });
+          try {
+            const itemStats = fs.statSync(itemPath);
+            size = isDir ? 0 : itemStats.size;
+            mtime = itemStats.mtime.toISOString();
+          } catch {
+            // Ignore stat errors for individual files
+          }
+
+          return {
+            name: entry.name,
+            path: itemPath,
+            type: getMediaType(entry.name, isDir),
+            size,
+            mtime,
+          };
+        });
+    }
+
+    // Sort items (directories first in non-recursive, then by name)
+    items.sort((a, b) => {
+      if (a.type === "directory" && b.type !== "directory") return -1;
+      if (a.type !== "directory" && b.type === "directory") return 1;
+      return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+    });
 
     // Calculate parent path
     const parentPath = path.dirname(resolvedPath);

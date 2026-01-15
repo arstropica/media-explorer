@@ -52,7 +52,7 @@ function sortItems(items: FileItem[], field: SortField, order: SortOrder): FileI
 }
 
 export function useFiles() {
-  const { currentPath, setCurrentPath, setLoading, setError, filterText } = useExplorerStore();
+  const { currentPath, setCurrentPath, setLoading, setError, filterText, recursiveSearch } = useExplorerStore();
   const { sortField, sortOrder } = useSettingsStore();
   const [data, setData] = useState<DirectoryResponse | null>(null);
   const isInitialLoad = useRef(true);
@@ -62,7 +62,7 @@ export function useFiles() {
     setError(null);
 
     try {
-      const response = await fetchDirectory(currentPath);
+      const response = await fetchDirectory(currentPath, recursiveSearch);
       setData(response);
 
       // If server returned a different path (e.g., redirected to MEDIA_ROOT),
@@ -77,7 +77,7 @@ export function useFiles() {
     } finally {
       setLoading(false);
     }
-  }, [currentPath, setCurrentPath, setLoading, setError]);
+  }, [currentPath, recursiveSearch, setCurrentPath, setLoading, setError]);
 
   useEffect(() => {
     loadDirectory();

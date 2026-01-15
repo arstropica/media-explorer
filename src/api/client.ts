@@ -2,10 +2,13 @@ import type { DirectoryResponse } from "./types";
 
 const API_BASE = "/api";
 
-export async function fetchDirectory(path: string): Promise<DirectoryResponse> {
-  const response = await fetch(
-    `${API_BASE}/files?path=${encodeURIComponent(path)}`
-  );
+export async function fetchDirectory(path: string, recursive: boolean = false): Promise<DirectoryResponse> {
+  const params = new URLSearchParams({
+    path,
+    ...(recursive && { recursive: "true" }),
+  });
+
+  const response = await fetch(`${API_BASE}/files?${params.toString()}`);
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: "Unknown error" }));

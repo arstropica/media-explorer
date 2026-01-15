@@ -12,8 +12,10 @@ const __dirname = path.dirname(__filename);
 
 const PORT = parseInt(process.env.PORT || "3000", 10);
 const MEDIA_ROOT = process.env.MEDIA_ROOT || process.env.HOME || "/";
+const MAX_RECURSION_DEPTH = parseInt(process.env.MAX_RECURSION_DEPTH || "5", 10);
 
 console.log(`[Server] MEDIA_ROOT: ${MEDIA_ROOT}`);
+console.log(`[Server] MAX_RECURSION_DEPTH: ${MAX_RECURSION_DEPTH}`);
 
 const app = express();
 
@@ -27,8 +29,9 @@ app.use((req, _res, next) => {
   next();
 });
 
-// Make MEDIA_ROOT available to routes
+// Make config available to routes
 app.locals.mediaRoot = MEDIA_ROOT;
+app.locals.maxRecursionDepth = MAX_RECURSION_DEPTH;
 
 // API Routes
 app.use("/api/files", filesRouter);
